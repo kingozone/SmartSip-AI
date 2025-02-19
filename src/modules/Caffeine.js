@@ -1,52 +1,77 @@
 import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import Button from '../components/Button';
 
 const Caffeine = () => {
-    const [caffeineIntake, setCaffeineIntake] = useState('');
-    const [suggestions, setSuggestions] = useState([]);
+  const [intakeCount, setIntakeCount] = useState(0);
+  const [lastIntakeTime, setLastIntakeTime] = useState(null);
 
-    const handleInputChange = (e) => {
-        setCaffeineIntake(e.target.value);
-    };
+  const trackIntake = (amount) => {
+    setIntakeCount(intakeCount + 1);
+    setLastIntakeTime(new Date().toLocaleTimeString());
+    // Here you would typically also save this data to your backend/storage
+  };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Logic to analyze caffeine intake and suggest alternatives
-        const alternatives = suggestAlternatives(caffeineIntake);
-        setSuggestions(alternatives);
-    };
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Caffeine Tracker</Text>
+      
+      <View style={styles.statsContainer}>
+        <Text style={styles.statsText}>Today's Intake: {intakeCount}</Text>
+        {lastIntakeTime && (
+          <Text style={styles.statsText}>Last Intake: {lastIntakeTime}</Text>
+        )}
+      </View>
 
-    const suggestAlternatives = (intake) => {
-        // Placeholder logic for suggesting alternatives based on intake
-        if (intake > 400) {
-            return ['Herbal Tea', 'Decaf Coffee', 'Water'];
-        }
-        return ['Coffee', 'Tea', 'Energy Drinks'];
-    };
-
-    return (
-        <div>
-            <h2>Caffeine Tracker</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="number"
-                    value={caffeineIntake}
-                    onChange={handleInputChange}
-                    placeholder="Enter caffeine intake (mg)"
-                />
-                <button type="submit">Submit</button>
-            </form>
-            {suggestions.length > 0 && (
-                <div>
-                    <h3>Suggested Alternatives:</h3>
-                    <ul>
-                        {suggestions.map((suggestion, index) => (
-                            <li key={index}>{suggestion}</li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-        </div>
-    );
+      <View style={styles.buttonContainer}>
+        <Button 
+          title="Coffee (95mg)" 
+          onPress={() => trackIntake(95)}
+          style={styles.trackingButton}
+        />
+        <Button 
+          title="Energy Drink (80mg)" 
+          onPress={() => trackIntake(80)}
+          style={styles.trackingButton}
+        />
+        <Button 
+          title="Tea (47mg)" 
+          onPress={() => trackIntake(47)}
+          style={styles.trackingButton}
+        />
+      </View>
+    </View>
+  );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#fff',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  statsContainer: {
+    backgroundColor: '#f5f5f5',
+    padding: 15,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  statsText: {
+    fontSize: 16,
+    marginBottom: 10,
+  },
+  buttonContainer: {
+    gap: 10,
+  },
+  trackingButton: {
+    marginVertical: 5,
+  },
+});
 
 export default Caffeine;
