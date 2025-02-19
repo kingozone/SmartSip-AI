@@ -1,0 +1,33 @@
+{
+  "name": "RecoveryWise",
+  "version": "1.0.0",
+  "description": "A comprehensive platform for substance use recovery and support.",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-native start",
+    "build": "react-native build",
+    "test": "jest",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "react": "17.0.1",
+    "react-native": "0.64.4",
+    "@react-navigation/native": "^6.0.0",
+    "@react-navigation/native-stack": "^6.0.0",
+    "axios": "^0.21.1",
+    "redux": "^4.1.0",
+    "react-redux": "^7.2.5"
+  },
+  "devDependencies": {
+    "eslint": "^7.32.0",
+    "jest": "^27.0.6"
+  },
+  "keywords": [
+    "recovery",
+    "substance use",
+    "support",
+    "mobile app"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
