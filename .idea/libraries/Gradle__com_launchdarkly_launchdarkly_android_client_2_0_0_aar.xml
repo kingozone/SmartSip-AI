@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="Gradle: com.launchdarkly:launchdarkly-android-client:2.0.0@aar" external-system-id="GRADLE">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/transforms-4/13d82a00292efc4ddfa364d572e3a34e/transformed/launchdarkly-android-client-2.0.0/jars/classes.jar!/" />
+      <root url="file://$PROJECT_DIR$/../.gradle/caches/transforms-4/13d82a00292efc4ddfa364d572e3a34e/transformed/launchdarkly-android-client-2.0.0/res" />
+      <root url="file://$PROJECT_DIR$/../.gradle/caches/transforms-4/13d82a00292efc4ddfa364d572e3a34e/transformed/launchdarkly-android-client-2.0.0/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/com.launchdarkly/launchdarkly-android-client/2.0.0/b7331f9cddfff19e6363c67d43f5eef9e18f1425/launchdarkly-android-client-2.0.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/com.launchdarkly/launchdarkly-android-client/2.0.0/34d61e03c92ee35eb4bed8655adb77c779a4d2a7/launchdarkly-android-client-2.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

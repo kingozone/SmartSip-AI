@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  # PocketBase (local database for app backend)
+  pocketbase:
+    image: pocketbase/pocketbase:latest
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./data:/pb_data
+    command: serve --http 0.0.0.0:8090
+    environment:
+      - PB_DATA_DIR=/pb_data
+
+  # Sentry (error tracking for Android app)
+  sentry:
+    image: sentry:latest
+    ports:
+      - "9000:9000"
+    environment:
+      - SENTRY_SECRET_KEY=your_sentry_secret_key
+      - SENTRY_DSN=your_sentry_dsn
+    volumes:
+      - sentry_data:/var/lib/sentry
+
+  # Jenkins (CI/CD for the Android project)
+  jenkins:
+    image: jenkins/jenkins:lts
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./jenkins_home:/var/jenkins_home
+    environment:
+      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+
+  # CircleCI (For Android Build)
+  circleci:
+    image: circleci/python:3.8
+    environment:
+      CIRCLECI: true
+    volumes:
+      - ./circleci_config:/etc/circleci/config.yml
+    working_dir: /workspace
+
+  # OpenAI API Integration (No container for this, just your app integration)
+  openai_api:
+    image: busybox:1.35.0-uclibc
+    command: /bin/sh -c "echo 'OpenAI API integration should be done in the Android app'"
+    container_name: openai-api
+
+  # Android Build Environment
+  android-build:
+    image: circleci/android:api-30
+    environment:
+      - GRADLE_OPTS=-Dorg.gradle.daemon=false
+    working_dir: /workspace
+    volumes:
+      - ./app:/workspace
+    command: /bin/bash -c "gradle build"
+
+  # LaunchDarkly (Feature flag service for app)
+  launchdarkly:
+    image: launchdarkly/ld-relay:latest
+    ports:
+      - "8030:8030"
+    environment:
+      - LD_CLIENT_SIDE_ID=your_launchdarkly_client_side_id
+      - LD_API_KEY=your_launchdarkly_api_key
+    volumes:
+      - launchdarkly_data:/var/lib/launchdarkly
+
+  # Proxy or additional services
+  proxy:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+
+# Named Volumes
+volumes:
+  sentry_data:
+  launchdarkly_data:

@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Gradle: com.launchdarkly:okhttp-eventsource:1.3.0" type="java-imported" external-system-id="GRADLE">
+    <properties groupId="com.launchdarkly" artifactId="okhttp-eventsource" version="1.3.0" />
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/com.launchdarkly/okhttp-eventsource/1.3.0/6f7a512e17435ad8c4275b2fdcc8884f849a7516/okhttp-eventsource-1.3.0.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/com.launchdarkly/okhttp-eventsource/1.3.0/cc8a58e330aad63464d8cb2d834a72944193f133/okhttp-eventsource-1.3.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/com.launchdarkly/okhttp-eventsource/1.3.0/842f975890f36dd8e4226c8c1d790a48d084c0e9/okhttp-eventsource-1.3.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

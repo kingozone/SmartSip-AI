@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/SmartSip-AI" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/smartsip-ai" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/smartsip-ai/git-credential-manager" vcs="Git" />
+  </component>
+</project>

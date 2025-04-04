@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Gradle: io.sentry:sentry-android-ndk:5.0.0@aar" external-system-id="GRADLE">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/transforms-4/c9c3bca521a9d720e21dab978a6262a3/transformed/sentry-android-ndk-5.0.0/jars/classes.jar!/" />
+      <root url="file://$PROJECT_DIR$/../.gradle/caches/transforms-4/c9c3bca521a9d720e21dab978a6262a3/transformed/sentry-android-ndk-5.0.0/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/io.sentry/sentry-android-ndk/5.0.0/2cc68ed1c601707e3472f7bb09c5a3a1764ae257/sentry-android-ndk-5.0.0-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../.gradle/caches/modules-2/files-2.1/io.sentry/sentry-android-ndk/5.0.0/7a75cd794394f495dadb0de4ab3c343fb15dabdb/sentry-android-ndk-5.0.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
