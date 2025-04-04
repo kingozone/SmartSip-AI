@@ -1,83 +1,249 @@
 version: '3.8'
 
 services:
-  # PocketBase (local database for app backend)
+  # --- Original Services ---
+
+  # PocketBase (Backend)
   pocketbase:
     image: pocketbase/pocketbase:latest
     ports:
-      - "8090:8090"
+      - "8090:8090" # PocketBase UI and API
     volumes:
-      - ./data:/pb_data
+      - ./data:/pb_data # Host directory to store PocketBase data
     command: serve --http 0.0.0.0:8090
     environment:
       - PB_DATA_DIR=/pb_data
+    restart: unless-stopped
 
-  # Sentry (error tracking for Android app)
+  # Sentry (Error Tracking - Self-Hosted)
   sentry:
-    image: sentry:latest
+    image: getsentry/sentry:latest # Use official image, consider specific version
     ports:
-      - "9000:9000"
+      - "9000:9000" # Sentry Web UI
     environment:
-      - SENTRY_SECRET_KEY=your_sentry_secret_key
-      - SENTRY_DSN=your_sentry_dsn
+      # Replace with secure generation/secrets
+      - SENTRY_SECRET_KEY=your_sentry_secret_key_please_change
+      # Requires additional setup for email, Redis, Postgres usually
     volumes:
       - sentry_data:/var/lib/sentry
+    # Note: A full Sentry setup often requires separate Redis & PostgreSQL containers.
+    # This basic setup might use internal SQLite for dev purposes. Check Sentry docs.
+    restart: unless-stopped
 
-  # Jenkins (CI/CD for the Android project)
+  # Jenkins (CI/CD)
   jenkins:
     image: jenkins/jenkins:lts
     ports:
-      - "8080:8080"
+      - "8080:8080" # Jenkins Web UI
+      - "50000:50000" # Optional: for Jenkins agent connections
     volumes:
-      - ./jenkins_home:/var/jenkins_home
+      - ./jenkins_home:/var/jenkins_home # Host directory for Jenkins data
     environment:
       - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+    restart: unless-stopped
 
-  # CircleCI (For Android Build)
-  circleci:
-    image: circleci/python:3.8
-    environment:
-      CIRCLECI: true
-    volumes:
-      - ./circleci_config:/etc/circleci/config.yml
-    working_dir: /workspace
+  # CircleCI Placeholder (Original entry, purpose unclear in local compose)
+  # circleci:
+  #   image: circleci/python:3.8
+  #   environment:
+  #     CIRCLECI: true
+  #   volumes:
+  #     - ./circleci_config:/etc/circleci/config.yml # Needs config file
+  #   working_dir: /workspace
+  #   # Needs a command to be useful
 
-  # OpenAI API Integration (No container for this, just your app integration)
+  # OpenAI API Placeholder (Original entry)
   openai_api:
     image: busybox:1.35.0-uclibc
-    command: /bin/sh -c "echo 'OpenAI API integration should be done in the Android app'"
-    container_name: openai-api
+    command: /bin/sh -c "echo 'Reminder: OpenAI API integration is in the Android app code, not a running service here.'"
+    container_name: openai-api-reminder # Renamed for clarity
 
-  # Android Build Environment
-  android-build:
-    image: circleci/android:api-30
-    environment:
-      - GRADLE_OPTS=-Dorg.gradle.daemon=false
-    working_dir: /workspace
-    volumes:
-      - ./app:/workspace
-    command: /bin/bash -c "gradle build"
+  # Android Build Environment (Run on demand, not typically a long-running service)
+  # android-build:
+  #   image: circleci/android:api-30 # Or another suitable Android build image
+  #   environment:
+  #     - GRADLE_OPTS=-Dorg.gradle.daemon=false
+  #   working_dir: /workspace
+  #   volumes:
+  #     - ./app:/workspace # Map your Android app source code here
+  #   command: /bin/bash -c "gradle build" # Example command
 
-  # LaunchDarkly (Feature flag service for app)
+  # LaunchDarkly Relay (Feature Flags)
   launchdarkly:
     image: launchdarkly/ld-relay:latest
     ports:
-      - "8030:8030"
+      - "8030:8030" # LaunchDarkly Relay port
     environment:
+      # Replace with your actual LaunchDarkly keys/IDs or use secrets
       - LD_CLIENT_SIDE_ID=your_launchdarkly_client_side_id
       - LD_API_KEY=your_launchdarkly_api_key
     volumes:
       - launchdarkly_data:/var/lib/launchdarkly
+    restart: unless-stopped
 
-  # Proxy or additional services
+  # Nginx Proxy (Routes traffic to other services)
   proxy:
     image: nginx:latest
     ports:
-      - "80:80"
+      - "80:80" # Standard HTTP port
+      # - "443:443" # Optional: Standard HTTPS port (requires SSL certs and config)
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro # Mount your Nginx config (read-only)
+      # - ./certs:/etc/nginx/certs:ro # Optional: Mount SSL certificates
+    depends_on: # Optional: Ensure backends are started, though Nginx handles failures
+      - pocketbase
+      - jenkins
+      - sentry
+      # Add other services Nginx proxies to
+    restart: unless-stopped
 
-# Named Volumes
+  # --- Added Open Source Services ---
+
+  # SonarQube (Code Quality)
+  sonarqube:
+    image: sonarqube:lts-community # Community Edition, Long-Term Support
+    ports:
+      - "9001:9000" # SonarQube Web UI (using 9001 to avoid Sentry conflict)
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true # For dev environment with limited resources
+    restart: unless-stopped
+
+  # Nexus Repository Manager (Artifacts)
+  nexus:
+    image: sonatype/nexus3:latest # Consider pinning to a specific version
+    ports:
+      - "8081:8081" # Nexus Web UI
+    volumes:
+      - nexus_data:/nexus-data # Host directory for Nexus data
+    restart: unless-stopped
+
+  # Prometheus (Monitoring - Metrics Collection)
+  prometheus:
+    image: prom/prometheus:latest # Consider pinning version
+    ports:
+      - "9090:9090" # Prometheus Web UI & API
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro # Mount Prometheus config (read-only)
+      - prometheus_data:/prometheus # Prometheus time-series data storage
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle' # Allows hot-reloading config via API call
+    restart: unless-stopped
+
+  # Grafana (Monitoring - Visualization)
+  grafana:
+    image: grafana/grafana-oss:latest # Open Source version, consider pinning
+    ports:
+      - "3000:3000" # Grafana Web UI
+    volumes:
+      - grafana_data:/var/lib/grafana # Grafana database and dashboards
+      # - ./grafana-provisioning/:/etc/grafana/provisioning/ # Optional: Mount provisioning configs
+    environment:
+      # Default admin user is admin/admin. Change pw on first login.
+      # - GF_SECURITY_ADMIN_PASSWORD=your_secure_password # Use secrets ideally
+      - GF_USERS_ALLOW_SIGN_UP=false # Disable public signups
+    depends_on:
+      - prometheus # Grafana often uses Prometheus as a data source
+    restart: unless-stopped
+
+  # Elasticsearch (ELK Stack - Search & Analytics Engine for Logs)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0 # Use specific, matching versions for ELK
+    ports:
+      - "9200:9200" # Elasticsearch REST API
+      # - "9300:9300" # Node-to-node communication (if clustering)
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data # Elasticsearch data
+    environment:
+      - discovery.type=single-node # Setup for a single node cluster
+      - xpack.security.enabled=false # ! Disable security for local dev ONLY. NOT FOR PRODUCTION !
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Adjust Java heap size as needed
+    ulimits: # Required by Elasticsearch
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    restart: unless-stopped
+
+  # Logstash (ELK Stack - Log Processing Pipeline)
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.13.0 # Match Elasticsearch version
+    ports:
+      - "5044:5044" # Default Beats input port (e.g., for Filebeat)
+      - "9600:9600" # Logstash monitoring API
+      # Add other input ports if needed, e.g., "5000:5000/tcp" for TCP input
+    volumes:
+      - ./logstash-pipeline/:/usr/share/logstash/pipeline/:ro # Mount your Logstash pipeline config(s) (read-only)
+      # - ./logstash.yml:/usr/share/logstash/config/logstash.yml:ro # Mount Logstash settings if needed
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m" # Adjust Java heap size as needed
+    depends_on:
+      - elasticsearch # Logstash needs to send data to Elasticsearch
+    restart: unless-stopped
+
+  # Kibana (ELK Stack - Log Visualization & Exploration)
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.13.0 # Match Elasticsearch version
+    ports:
+      - "5601:5601" # Kibana Web UI
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200 # Point Kibana to Elasticsearch service
+      # - SERVER_BASEPATH=/kibana # Optional: if proxying under a subpath
+    volumes:
+       - kibana_data:/usr/share/kibana/data # Kibana specific data/plugins
+    depends_on:
+      - elasticsearch # Kibana needs Elasticsearch
+    restart: unless-stopped
+
+  # MkDocs (Documentation Site Server - Development Mode)
+  mkdocs:
+    image: python:3.9-slim # Use a Python image
+    ports:
+      - "8000:8000" # MkDocs development server port
+    volumes:
+      - ./docs:/docs # Mount your Markdown documentation source files
+      - ./mkdocs.yml:/mkdocs.yml:ro # Mount your MkDocs configuration file (read-only)
+    working_dir: /
+    command: /bin/sh -c "pip install mkdocs mkdocs-material && mkdocs serve -a 0.0.0.0:8000 -f /mkdocs.yml"
+    # Installs mkdocs & material theme, then serves site from /docs using /mkdocs.yml
+    restart: unless-stopped
+
+
+# --- Named Volumes Definition ---
+# These volumes persist data even if containers are removed and recreated.
 volumes:
+  # Original volumes
   sentry_data:
   launchdarkly_data:
+  # Added volumes
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  nexus_data:
+  prometheus_data:
+  grafana_data:
+  elasticsearch_data:
+  kibana_data:
+  # Note: Logstash typically processes data, doesn't store long term in a volume itself
+  # Note: Jenkins data stored via bind mount ./jenkins_home
+  # Note: PocketBase data stored via bind mount ./data
+  # Note: MkDocs reads from bind mounts ./docs and ./mkdocs.yml
+
+# --- Optional: Network Definition ---
+# You might want to define a custom network for better isolation and service discovery
+# networks:
+#   app_network:
+#     driver: bridge
+
+# If using a custom network, add this to each service:
+# networks:
+#   - app_network
