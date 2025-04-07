@@ -1,230 +1,275 @@
+# Full Docker Compose file for Android App Project Infrastructure
+# --- OPTIMIZED STARTING POINTS FOR 8GB RAM HOST ---
+# Generated on: 2025-04-04
+# WARNING: Monitor resource usage closely and run fewer services concurrently.
+
 version: '3.8'
 
 services:
   # --- Original Services ---
 
-  # PocketBase (Backend)
   pocketbase:
     image: pocketbase/pocketbase:latest
     ports:
-      - "8090:8090" # PocketBase UI and API
+      - "8090:8090"
     volumes:
-      - ./data:/pb_data # Host directory to store PocketBase data
+      - ./data:/pb_data
     command: serve --http 0.0.0.0:8090
     environment:
       - PB_DATA_DIR=/pb_data
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
     restart: unless-stopped
 
-  # Sentry (Error Tracking - Self-Hosted)
-  sentry:
-    image: getsentry/sentry:latest # Use official image, consider specific version
+  sentry: # Assumes light usage / default SQLite backend
+    image: getsentry/sentry:latest
     ports:
-      - "9000:9000" # Sentry Web UI
+      - "9000:9000"
     environment:
-      # Replace with secure generation/secrets
-      - SENTRY_SECRET_KEY=your_sentry_secret_key_please_change
-      # Requires additional setup for email, Redis, Postgres usually
+      - SENTRY_SECRET_KEY=your_sentry_secret_key_please_change # Use secrets!
     volumes:
       - sentry_data:/var/lib/sentry
-    # Note: A full Sentry setup often requires separate Redis & PostgreSQL containers.
-    # This basic setup might use internal SQLite for dev purposes. Check Sentry docs.
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 1G # Reduced limit
+        reservations:
+          memory: 256M # Reduced reservation
     restart: unless-stopped
 
-  # Jenkins (CI/CD)
   jenkins:
     image: jenkins/jenkins:lts
     ports:
-      - "8080:8080" # Jenkins Web UI
-      - "50000:50000" # Optional: for Jenkins agent connections
+      - "8080:8080"
+      - "50000:50000"
     volumes:
-      - ./jenkins_home:/var/jenkins_home # Host directory for Jenkins data
+      - ./jenkins_home:/var/jenkins_home
     environment:
-      - JAVA_OPTS=-Djenkins.install.runSetupWizard=false
+      # Reduced Heap for 8GB host + original flag
+      - JAVA_OPTS=-Xms512m -Xmx1g -Djenkins.install.runSetupWizard=false
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 1.5G # Reduced limit (allows ~1G heap + overhead)
+        reservations:
+          memory: 768M # Reduced reservation
     restart: unless-stopped
 
-  # CircleCI Placeholder (Original entry, purpose unclear in local compose)
-  # circleci:
-  #   image: circleci/python:3.8
-  #   environment:
-  #     CIRCLECI: true
-  #   volumes:
-  #     - ./circleci_config:/etc/circleci/config.yml # Needs config file
-  #   working_dir: /workspace
-  #   # Needs a command to be useful
+  openai_api_reminder: # Renamed placeholder
+    image: busybox:1.35.0-uclibc # Ensure this tag is valid or replace with a correct one
+    command: '/bin/sh -c "echo Reminder: External AI API integration happens in client/backend code."'
+    container_name: external-ai-api-reminder
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 32M
+        reservations:
+          memory: 16M
+    restart: unless-stopped
 
-  # OpenAI API Placeholder (Original entry)
-  openai_api:
-    image: busybox:1.35.0-uclibc
-    command: /bin/sh -c "echo 'Reminder: OpenAI API integration is in the Android app code, not a running service here.'"
-    container_name: openai-api-reminder # Renamed for clarity
-
-  # Android Build Environment (Run on demand, not typically a long-running service)
-  # android-build:
-  #   image: circleci/android:api-30 # Or another suitable Android build image
-  #   environment:
-  #     - GRADLE_OPTS=-Dorg.gradle.daemon=false
-  #   working_dir: /workspace
-  #   volumes:
-  #     - ./app:/workspace # Map your Android app source code here
-  #   command: /bin/bash -c "gradle build" # Example command
-
-  # LaunchDarkly Relay (Feature Flags)
   launchdarkly:
     image: launchdarkly/ld-relay:latest
     ports:
-      - "8030:8030" # LaunchDarkly Relay port
+      - "8030:8030"
     environment:
-      # Replace with your actual LaunchDarkly keys/IDs or use secrets
-      - LD_CLIENT_SIDE_ID=your_launchdarkly_client_side_id
-      - LD_API_KEY=your_launchdarkly_api_key
+      - LD_CLIENT_SIDE_ID=your_launchdarkly_client_side_id # Use secrets!
+      - LD_API_KEY=your_launchdarkly_api_key # Use secrets!
     volumes:
       - launchdarkly_data:/var/lib/launchdarkly
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 192M
+        reservations:
+          memory: 64M
     restart: unless-stopped
 
-  # Nginx Proxy (Routes traffic to other services)
-  proxy:
+  proxy: # Nginx
     image: nginx:latest
     ports:
-      - "80:80" # Standard HTTP port
-      # - "443:443" # Optional: Standard HTTPS port (requires SSL certs and config)
+      - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro # Mount your Nginx config (read-only)
-      # - ./certs:/etc/nginx/certs:ro # Optional: Mount SSL certificates
-    depends_on: # Optional: Ensure backends are started, though Nginx handles failures
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
       - pocketbase
       - jenkins
       - sentry
-      # Add other services Nginx proxies to
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 32M
     restart: unless-stopped
 
   # --- Added Open Source Services ---
 
-  # SonarQube (Code Quality)
   sonarqube:
-    image: sonarqube:lts-community # Community Edition, Long-Term Support
+    image: sonarqube:lts-community
     ports:
-      - "9001:9000" # SonarQube Web UI (using 9001 to avoid Sentry conflict)
+      - "9001:9000"
     volumes:
       - sonarqube_data:/opt/sonarqube/data
       - sonarqube_extensions:/opt/sonarqube/extensions
       - sonarqube_logs:/opt/sonarqube/logs
     environment:
-      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true # For dev environment with limited resources
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+      # Note: May need specific SONAR_WEB_JAVAOPTS, SONAR_CE_JAVAOPTS, SONAR_SEARCH_JAVAOPTS
+      # to strictly enforce low memory usage on 8GB host. Performance will be impacted.
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 2G # Reduced limit - expect slowness/swapping
+        reservations:
+          memory: 1G # Reduced reservation - bare minimum
     restart: unless-stopped
 
-  # Nexus Repository Manager (Artifacts)
   nexus:
-    image: sonatype/nexus3:latest # Consider pinning to a specific version
+    image: sonatype/nexus3:latest
     ports:
-      - "8081:8081" # Nexus Web UI
+      - "8081:8081"
     volumes:
-      - nexus_data:/nexus-data # Host directory for Nexus data
+      - nexus_data:/nexus-data
+    # Reduced Heap for 8GB host - check Nexus docs for exact env var if needed
+    environment:
+       - INSTALL4J_ADD_VM_PARAMS=-Xms512m -Xmx768m -XX:MaxDirectMemorySize=1G
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 1.5G # Reduced limit
+        reservations:
+          memory: 512M # Reduced reservation (aligns loosely with ~768m heap)
     restart: unless-stopped
 
-  # Prometheus (Monitoring - Metrics Collection)
   prometheus:
-    image: prom/prometheus:latest # Consider pinning version
+    image: prom/prometheus:latest
     ports:
-      - "9090:9090" # Prometheus Web UI & API
+      - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro # Mount Prometheus config (read-only)
-      - prometheus_data:/prometheus # Prometheus time-series data storage
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-lifecycle' # Allows hot-reloading config via API call
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=15d' # Example: Reduce retention to save space/memory
+      - '--storage.tsdb.retention.size=2GB' # Example: Limit disk size
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 1G # Reduced limit
+        reservations:
+          memory: 256M # Reduced reservation
     restart: unless-stopped
 
-  # Grafana (Monitoring - Visualization)
   grafana:
-    image: grafana/grafana-oss:latest # Open Source version, consider pinning
+    image: grafana/grafana-oss:latest
     ports:
-      - "3000:3000" # Grafana Web UI
+      - "3000:3000"
     volumes:
-      - grafana_data:/var/lib/grafana # Grafana database and dashboards
-      # - ./grafana-provisioning/:/etc/grafana/provisioning/ # Optional: Mount provisioning configs
+      - grafana_data:/var/lib/grafana
     environment:
-      # Default admin user is admin/admin. Change pw on first login.
-      # - GF_SECURITY_ADMIN_PASSWORD=your_secure_password # Use secrets ideally
-      - GF_USERS_ALLOW_SIGN_UP=false # Disable public signups
+      - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
-      - prometheus # Grafana often uses Prometheus as a data source
+      - prometheus
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 384M # Reduced limit
+        reservations:
+          memory: 128M # Reduced reservation
     restart: unless-stopped
 
-  # Elasticsearch (ELK Stack - Search & Analytics Engine for Logs)
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0 # Use specific, matching versions for ELK
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.0
     ports:
-      - "9200:9200" # Elasticsearch REST API
-      # - "9300:9300" # Node-to-node communication (if clustering)
+      - "9200:9200"
     volumes:
-      - elasticsearch_data:/usr/share/elasticsearch/data # Elasticsearch data
+      - elasticsearch_data:/usr/share/elasticsearch/data
     environment:
-      - discovery.type=single-node # Setup for a single node cluster
-      - xpack.security.enabled=false # ! Disable security for local dev ONLY. NOT FOR PRODUCTION !
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Adjust Java heap size as needed
-    ulimits: # Required by Elasticsearch
+      - discovery.type=single-node
+      - xpack.security.enabled=false # Dev only!
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m" # Reduced Heap for 8GB host
+    ulimits:
       memlock:
         soft: -1
         hard: -1
       nofile:
         soft: 65536
         hard: 65536
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 1.2G # Reduced limit (allows 512M heap + overhead)
+        reservations:
+          memory: 768M # Reduced reservation
     restart: unless-stopped
 
-  # Logstash (ELK Stack - Log Processing Pipeline)
   logstash:
-    image: docker.elastic.co/logstash/logstash:8.13.0 # Match Elasticsearch version
+    image: docker.elastic.co/logstash/logstash:8.13.0
     ports:
-      - "5044:5044" # Default Beats input port (e.g., for Filebeat)
-      - "9600:9600" # Logstash monitoring API
-      # Add other input ports if needed, e.g., "5000:5000/tcp" for TCP input
+      - "5044:5044"
+      - "9600:9600"
     volumes:
-      - ./logstash-pipeline/:/usr/share/logstash/pipeline/:ro # Mount your Logstash pipeline config(s) (read-only)
-      # - ./logstash.yml:/usr/share/logstash/config/logstash.yml:ro # Mount Logstash settings if needed
+      - ./logstash-pipeline/:/usr/share/logstash/pipeline/:ro
     environment:
-      - "LS_JAVA_OPTS=-Xms256m -Xmx256m" # Adjust Java heap size as needed
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m" # Reduced Heap for 8GB host
     depends_on:
-      - elasticsearch # Logstash needs to send data to Elasticsearch
+      - elasticsearch
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 640M # Reduced limit (allows 256M heap + overhead)
+        reservations:
+          memory: 384M # Reduced reservation
     restart: unless-stopped
 
-  # Kibana (ELK Stack - Log Visualization & Exploration)
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.13.0 # Match Elasticsearch version
+    image: docker.elastic.co/kibana/kibana:8.13.0
     ports:
-      - "5601:5601" # Kibana Web UI
+      - "5601:5601"
     environment:
-      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200 # Point Kibana to Elasticsearch service
-      # - SERVER_BASEPATH=/kibana # Optional: if proxying under a subpath
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     volumes:
-       - kibana_data:/usr/share/kibana/data # Kibana specific data/plugins
+       - kibana_data:/usr/share/kibana/data
     depends_on:
-      - elasticsearch # Kibana needs Elasticsearch
+      - elasticsearch
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 768M # Reduced limit
+        reservations:
+          memory: 256M # Reduced reservation
     restart: unless-stopped
 
-  # MkDocs (Documentation Site Server - Development Mode)
   mkdocs:
-    image: python:3.9-slim # Use a Python image
+    image: python:3.9-slim
     ports:
-      - "8000:8000" # MkDocs development server port
+      - "8000:8000"
     volumes:
-      - ./docs:/docs # Mount your Markdown documentation source files
-      - ./mkdocs.yml:/mkdocs.yml:ro # Mount your MkDocs configuration file (read-only)
+      - ./docs:/docs
+      - ./mkdocs.yml:/mkdocs.yml:ro
     working_dir: /
     command: /bin/sh -c "pip install mkdocs mkdocs-material && mkdocs serve -a 0.0.0.0:8000 -f /mkdocs.yml"
-    # Installs mkdocs & material theme, then serves site from /docs using /mkdocs.yml
+    deploy: # Resource settings for 8GB host
+      resources:
+        limits:
+          memory: 192M
+        reservations:
+          memory: 64M
     restart: unless-stopped
 
 
 # --- Named Volumes Definition ---
-# These volumes persist data even if containers are removed and recreated.
 volumes:
-  # Original volumes
   sentry_data:
   launchdarkly_data:
-  # Added volumes
   sonarqube_data:
   sonarqube_extensions:
   sonarqube_logs:
@@ -233,17 +278,13 @@ volumes:
   grafana_data:
   elasticsearch_data:
   kibana_data:
-  # Note: Logstash typically processes data, doesn't store long term in a volume itself
-  # Note: Jenkins data stored via bind mount ./jenkins_home
-  # Note: PocketBase data stored via bind mount ./data
-  # Note: MkDocs reads from bind mounts ./docs and ./mkdocs.yml
 
-# --- Optional: Network Definition ---
-# You might want to define a custom network for better isolation and service discovery
-# networks:
-#   app_network:
-#     driver: bridge
+# --- Network Definition (Recommended) ---
+# Using a custom network is generally good practice.
+networks:
+   app_network:
+     driver: bridge
 
-# If using a custom network, add this to each service:
+# --- Add this to EACH service if using custom network ---
 # networks:
 #   - app_network
