@@ -1,0 +1,16 @@
+---
+- name: Deploy SmartSip AI APK to testing server
+  hosts: android_test_devices
+  become: yes
+
+  tasks:
+    - name: Upload APK to device/emulator
+      copy:
+        src: app/build/outputs/apk/debug/app-debug.apk
+        dest: /opt/smartsip-ai/app-debug.apk
+
+    - name: Install APK via ADB
+      shell: adb install -r /opt/smartsip-ai/app-debug.apk
+      
+vars_files:
+  - secrets.yml

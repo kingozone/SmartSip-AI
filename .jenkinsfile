@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+
+    environment {
+        JAVA_HOME = tool name: 'JDK17'
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/kingozone/SmartSip-AI.git', branch: 'main'
+            }
+        }
+        stage('Build APK') {
+            steps {
+                sh 'chmod +x ./gradlew'
+                sh './gradlew assembleDebug'
+            }
+        }
+        stage('Archive APK') {
+            steps {
+                archiveArtifacts artifacts: 'app/build/outputs/apk/debug/app-debug.apk', fingerprint: true
+            }
+        }
+    }
+}

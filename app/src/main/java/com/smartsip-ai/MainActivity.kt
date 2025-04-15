@@ -1,11 +1,19 @@
 package com.smartsip.ai
+dependencies {
+    implementation("io.sentry:sentry-android:6.32.0")
+}
 
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.app.Application
+import io.sentry.Sentry
 
-class MainActivity : AppCompatActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+class MainApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+
+        Sentry.init { options ->
+            options.dsn = "https://your-dsn@o123456.ingest.sentry.io/123456"
+            options.tracesSampleRate = 1.0
+            options.isDebug = true
+        }
     }
 }

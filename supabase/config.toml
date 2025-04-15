@@ -1,0 +1,8 @@
+[project]
+id = "your-project-id"
+name = "SmartSipAI"
+
+[api]
+port = 54321
+schema = "public, auth"
+shadow_port = 54322

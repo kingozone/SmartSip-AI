@@ -1,0 +1,17 @@
+{
+    "smart_tips": {
+      "key": "smart_tips",
+      "name": "Enable AI Health Tips",
+      "variations": [true, false],
+      "default": false,
+      "description": "Toggles AI-powered moderation coaching"
+    },
+    "hydration_prompt": {
+      "key": "hydration_prompt",
+      "name": "Hydration Reminder",
+      "variations": [true, false],
+      "default": true,
+      "description": "Reminds user to drink water between drinks"
+    }
+  }
+  
