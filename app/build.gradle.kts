@@ -36,6 +36,26 @@ val client = PostgrestClient(
     headers = mapOf("apikey" to "your-public-api-key")
 )
 
+val localProperties = Properties().apply {
+    load(rootProject.file("local.properties").inputStream())
+}
+
+android {
+    buildTypes {
+        getByName("debug") {
+            buildConfigField("String", "SUPABASE_URL", "\"${localProperties["SUPABASE_URL"]}\"")
+            buildConfigField("String", "SENTRY_DSN", "\"${localProperties["SENTRY_DSN"]}\"")
+        }
+    }
+}
+
+sentry {
+    autoUploadProguardMapping.set(true)
+    org.set("kingozone")
+    projectName.set("smartsip-ai")
+    authToken.set(System.getenv("SENTRY_AUTH_TOKEN"))
+}
+
 
 
 dependencies {

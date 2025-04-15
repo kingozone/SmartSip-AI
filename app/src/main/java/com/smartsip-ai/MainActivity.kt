@@ -6,6 +6,9 @@ dependencies {
 import android.app.Application
 import io.sentry.Sentry
 
+val sentryDsn = BuildConfig.SENTRY_DSN
+
+
 class MainApplication : Application() {
     override fun onCreate() {
         super.onCreate()

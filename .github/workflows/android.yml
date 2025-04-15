@@ -1,32 +1,60 @@
-name: Android CI
+name: Android CI + Sentry
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
+
+env:
+  SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+  SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+  SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+  SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+  SENTRY_ORG: kingozone
+  SENTRY_PROJECT: smartsip-ai
 
 jobs:
   build:
-    name: Build APK
+    name: Build & Upload APK
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-      - name: Set up JDK
+      - name: Set up Java
         uses: actions/setup-java@v3
         with:
-          distribution: temurin
-          java-version: 17
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Grant execute permissions to Gradle
+      - name: Set up local.properties
+        run: |
+          echo "SUPABASE_URL=$SUPABASE_URL" >> local.properties
+          echo "SUPABASE_KEY=$SUPABASE_KEY" >> local.properties
+          echo "SENTRY_DSN=$SENTRY_DSN" >> local.properties
+
+      - name: Grant Gradle permission
         run: chmod +x ./gradlew
 
-      - name: Build APK
+      - name: Build Debug APK
         run: ./gradlew assembleDebug
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: SmartSipAI-debug-apk
+          name: app-debug.apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Install Sentry CLI
+        run: curl -sL https://sentry.io/get-cli/ | bash
+
+      - name: Upload mapping to Sentry (ProGuard/R8)
+        run: |
+          export SENTRY_PROPERTIES=sentry.properties
+          ./sentry-cli releases new -p $SENTRY_PROJECT "smart-${{ github.sha }}"
+          ./sentry-cli releases files "smart-${{ github.sha }}" upload-sourcemaps app/build/intermediates/mapping/debug
+          ./sentry-cli releases finalize "smart-${{ github.sha }}"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
