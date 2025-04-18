@@ -1,8 +1,8 @@
-[project]
-id = "your-project-id"
-name = "SmartSipAI"
-
-[api]
-port = 54321
-schema = "public, auth"
-shadow_port = 54322
+project_id = "tfgcrhmuoinnfiwgibpp"
+[auth]
+enable_email_signup = true
+enable_oauth_signup = true
+external.google.enabled = true
+external.microsoft.enabled = true
+external.apple.enabled = true
+external.facebook.enabled = true
