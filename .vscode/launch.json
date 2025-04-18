@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Android App",
+      "type": "android",
+      "request": "launch",
+      "mainClass": "com.smartsipai.MainActivity",
+      "projectType": "gradle"
+    },
+    {
+      "name": "Run Backend (Docker)",
+      "type": "shell",
+      "request": "launch",
+      "command": "make run-backend"
+    }
+  ]
+}
