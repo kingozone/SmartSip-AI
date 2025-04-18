@@ -1,0 +1,28 @@
+name: Upload Sentry Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  sentry-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - name: Install Sentry CLI
+        run: npm install -g @sentry/cli
+      - name: Create Release
+        run: |
+          export SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
+          sentry-cli releases new $GITHUB_REF_NAME
+          sentry-cli releases set-commits $GITHUB_REF_NAME --auto
+          sentry-cli releases finalize $GITHUB_REF_NAME
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: smartsip
+          SENTRY_PROJECT: smartsip-ai
